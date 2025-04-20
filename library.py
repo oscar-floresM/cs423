@@ -185,8 +185,8 @@ class CustomOHETransformer(BaseEstimator, TransformerMixin):
 
     return X_encoded
 
-  ###########################################################################################################################
-  class CustomDropColumnsTransformer(BaseEstimator, TransformerMixin):
+###########################################################################################################################
+class CustomDropColumnsTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer that either drops or keeps specified columns in a DataFrame.
 
