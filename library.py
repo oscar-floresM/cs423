@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 import sklearn
 sklearn.set_config(transform_output="pandas")  #says pass pandas tables through pipeline instead of numpy matrices
 
-
+###########################################################################################################################
 class CustomMappingTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer that maps values in a specified column according to a provided dictionary.
@@ -155,36 +155,36 @@ class CustomMappingTransformer(BaseEstimator, TransformerMixin):
         #self.fit(X,y)  #commented out to avoid warning message in fit
         result: pd.DataFrame = self.transform(X)
         return result
-
+        
+###########################################################################################################################
 class CustomOHETransformer(BaseEstimator, TransformerMixin):
-  def __init__(self, target_column):
-        """
-        Parameters:
-        - target_column: list of str or str
-            The categorical columns to one-hot encode.
-        """
-        if type(target_column) == str:
-            self.columns = [target_column]
-        else:
-            self.columns = target_column
+  def __init__(self, target_column, dummy_na=False, drop_first=False):
+    self.target_column = target_column
+    self.dummy_na = dummy_na
+    self.drop_first = drop_first
 
   def fit(self, X, y=None):
-      # Per instructions: do nothing
       return self
 
   def transform(self, X):
-      if not isinstance(X, pd.DataFrame):
-          raise TypeError("Input must be a pandas DataFrame.")
+    if not isinstance(X, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame.")
 
-      # Ensure all columns exist
-      missing_cols = set(self.columns) - set(X.columns)
-      assert not missing_cols, f"The following columns do not exist in the DataFrame: {missing_cols}"
+    target_cols = [self.target_column] if isinstance(self.target_column, str) else self.target_column
 
-      # Use pd.get_dummies, specifying only the target columns
-      X_encoded = pd.get_dummies(X, columns=self.columns)
+    missing_cols = set(target_cols) - set(X.columns)
+    assert not missing_cols, f"CustomOHETransformer.transform unknown column {missing_cols}"
 
-      return X_encoded
+    X_encoded = pd.get_dummies(
+        X,
+        columns=target_cols,
+        dummy_na=self.dummy_na,
+        drop_first=self.drop_first
+    )
 
+    return X_encoded
+
+  ###########################################################################################################################
   class CustomDropColumnsTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer that either drops or keeps specified columns in a DataFrame.
@@ -249,18 +249,42 @@ class CustomOHETransformer(BaseEstimator, TransformerMixin):
         self.column_list: List[str] = column_list
         self.action: Literal['drop', 'keep'] = action
 
-      #your code below
+    #your code below
     def fit(self, X: pd.DataFrame, y: Optional[Iterable] = None) -> Self:
-        assert isinstance(X, pd.core.frame.DataFrame), f'{self.__class__.__name__}.fit expected Dataframe but got {type(X)} instead.'
-        print(f"\nWarning: {self.__class__.__name__}.fit does nothing.\n")
-        return self  #always the return value of fit
-  
+      assert isinstance(X, pd.DataFrame), f'{self.__class__.__name__}.fit expected Dataframe but got {type(X)} instead.'
+      print(f"\nWarning: {self.__class__.__name__}.fit does nothing.\n")
+      return self
+
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        assert isinstance(X, pd.core.frame.DataFrame), f'{self.__class__.__name__}.transform expected Dataframe but got {type(X)} instead.'
-        assert set(self.column_list) - set(X.columns.to_list()) == set(), f'{self.__class__.__name__}.transform unknown columns to keep: {set(self.column_list) - set(X.columns.to_list())}'
-        X_: pd.DataFrame = X.copy()
-        if self.action == 'drop':
-          X_.drop(columns=self.column_list, inplace=True)
-        else:
+      assert isinstance(X, pd.DataFrame), f'{self.__class__.__name__}.transform expected Dataframe but got {type(X)} instead.'
+      X_ = X.copy()
+      missing_cols = set(self.column_list) - set(X.columns)
+
+      if self.action == 'drop':
+          if missing_cols:
+              warnings.warn(f'{self.__class__.__name__}.transform dropping unknown columns: {missing_cols}')
+          X_.drop(columns=self.column_list, errors='ignore', inplace=True)
+      else:  # action == 'keep'
+          assert not missing_cols, f'{self.__class__.__name__}.transform unknown columns to keep: {missing_cols}'
           X_ = X_[self.column_list]
-        return X_
+
+      return X_
+
+###########################################################################################################################
+customer_transformer = Pipeline(steps=[
+    #add drop step below
+    ('drop', CustomDropColumnsTransformer(['ID'], 'drop')),
+    ], verbose=True)
+
+#now invoke it
+transformed_df = customer_transformer.fit_transform(customer_features)
+
+###########################################################################################################################
+customer_transformer = Pipeline(steps=[
+    #add drop step below
+    ('drop', CustomDropColumnsTransformer(['ID'], 'drop')),
+    ], verbose=True)
+
+#now invoke it
+transformed_df = customer_transformer.fit_transform(customer_features)
+
