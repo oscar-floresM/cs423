@@ -286,6 +286,7 @@ transformed_df = titanic_transformer.fit_transform(titanic_features)
 customer_transformer = Pipeline(steps=[
     #add drop step below
     ('drop', CustomDropColumnsTransformer(['ID'], 'drop')),
+    ('time spent', CustomTukeyTransformer('Time Spent', 'inner')),
     ], verbose=True)
 
 #now invoke it
