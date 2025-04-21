@@ -272,6 +272,80 @@ class CustomDropColumnsTransformer(BaseEstimator, TransformerMixin):
       return X_
 
 ###########################################################################################################################
+
+class CustomTukeyTransformer(BaseEstimator, TransformerMixin):
+    """
+    A transformer that applies Tukey's fences (inner or outer) to a specified column in a pandas DataFrame.
+
+    This transformer follows the scikit-learn transformer interface and can be used in a scikit-learn pipeline.
+    It clips values in the target column based on Tukey's inner or outer fences.
+
+    Parameters
+    ----------
+    target_column : Hashable
+        The name of the column to apply Tukey's fences on.
+    fence : Literal['inner', 'outer'], default='outer'
+        Determines whether to use the inner fence (1.5 * IQR) or the outer fence (3.0 * IQR).
+
+    Attributes
+    ----------
+    inner_low : Optional[float]
+        The lower bound for clipping using the inner fence (Q1 - 1.5 * IQR).
+    outer_low : Optional[float]
+        The lower bound for clipping using the outer fence (Q1 - 3.0 * IQR).
+    inner_high : Optional[float]
+        The upper bound for clipping using the inner fence (Q3 + 1.5 * IQR).
+    outer_high : Optional[float]
+        The upper bound for clipping using the outer fence (Q3 + 3.0 * IQR).
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'values': [10, 15, 14, 20, 100, 5, 7]})
+    >>> tukey_transformer = CustomTukeyTransformer(target_column='values', fence='inner')
+    >>> transformed_df = tukey_transformer.fit_transform(df)
+    >>> transformed_df
+    """
+    def __init__(self, target_column: str, fence: Literal['inner', 'outer'] = 'outer'):
+        self.target_column = target_column
+        self.fence = fence
+        self.inner_low: Optional[float] = None
+        self.outer_low: Optional[float] = None
+        self.inner_high: Optional[float] = None
+        self.outer_high: Optional[float] = None
+
+    def fit(self, X: pd.DataFrame, y=None):
+        assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)} instead.'
+        assert self.target_column in X.columns, f'Unknown column {self.target_column}'
+        assert pd.api.types.is_numeric_dtype(X[self.target_column]), \
+            f'Expected numeric dtype in column {self.target_column}'
+
+        q1 = X[self.target_column].quantile(0.25)
+        q3 = X[self.target_column].quantile(0.75)
+        iqr = q3 - q1
+
+        self.inner_low = q1 - 1.5 * iqr
+        self.inner_high = q3 + 1.5 * iqr
+        self.outer_low = q1 - 3.0 * iqr
+        self.outer_high = q3 + 3.0 * iqr
+
+        return self
+
+    def transform(self, X: pd.DataFrame):
+        assert self.inner_low is not None, "TukeyTransformer.fit has not been called."
+
+        X_copy = X.copy()
+        if self.fence == 'inner':
+            low = self.inner_low
+            high = self.inner_high
+        else:  # 'outer'
+            low = self.outer_low
+            high = self.outer_high
+
+        X_copy[self.target_column] = X_copy[self.target_column].clip(lower=low, upper=high)
+        return X_copy
+
+###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
     ('gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
     ('class', CustomMappingTransformer('Class', {'Crew': 0, 'C3': 1, 'C2': 2, 'C1': 3})),
