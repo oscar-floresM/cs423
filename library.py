@@ -474,7 +474,7 @@ titanic_transformer = Pipeline(steps=[
     ], verbose=True)
 
 #now invoke it
-transformed_df = titanic_transformer.fit_transform(titanic_features)
+#transformed_df = titanic_transformer.fit_transform(titanic_features)
 
 ###########################################################################################################################
 customer_transformer = Pipeline(steps=[
@@ -484,5 +484,5 @@ customer_transformer = Pipeline(steps=[
     ], verbose=True)
 
 #now invoke it
-transformed_df = customer_transformer.fit_transform(customer_features)
+#transformed_df = customer_transformer.fit_transform(customer_features)
 
