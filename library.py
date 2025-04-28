@@ -523,15 +523,16 @@ class CustomRobustTransformer(BaseEstimator, TransformerMixin):
     -------
     pandas.DataFrame
         A new DataFrame with the target column scaled using robust scaling.
-        """
+    """
     if self.iqr is None or self.med is None:
       raise NotFittedError("This CustomRobustTransformer instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.")
 
-    if self.target_column not in X.columns:
-      raise ValueError(f"CustomRobustTransformer.fit unrecognizable column {self.target_column}")
-    
-    X[self.target_column] = (X[self.target_column] - self.med) / self.iqr
-    return X
+    if self.target_column not in X.columns:  # Complete the if statement
+        raise ValueError(f"Column '{self.target_column}' not found in input DataFrame.")
+
+    X_robust = X.copy()
+    X_robust[self.target_column] = (X[self.target_column] - self.med) / self.iqr
+    return X_robust
       
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
