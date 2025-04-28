@@ -465,29 +465,30 @@ class CustomTukeyTransformer(BaseEstimator, TransformerMixin):
         return X_copy
         
 ###########################################################################################################################
-class CustomRobustTransformer_wrapped(BaseEstimator, TransformerMixin):
-  """Applies robust scaling to a specified column using sklearn's RobustScaler.
+class CustomRobustTransformer(BaseEstimator, TransformerMixin):
+  """Applies robust scaling to a specified column in a pandas DataFrame.
+    This transformer calculates the interquartile range (IQR) and median
+    during the `fit` method and then uses these values to scale the
+    target column in the `transform` method.
 
-  This transformer wraps the sklearn RobustScaler to apply it to a single
-  column of a pandas DataFrame. It calculates the interquartile range (IQR)
-  and median during the `fit` method and then uses these values to scale the
-  target column in the `transform` method.
+    Parameters
+    ----------
+    column : str
+        The name of the column to be scaled.
 
-  Parameters
-  ----------
-  column : str
-    The name of the column to be scaled.
-
-  Attributes
-  ----------
-  target_column : str
-    The name of the column to be scaled.
-  scaler : sklearn.preprocessing.RobustScaler
-    The underlying RobustScaler instance.
+    Attributes
+    ----------
+    target_column : str
+        The name of the column to be scaled.
+    iqr : float
+        The interquartile range of the target column.
+    med : float
+        The median of the target column.
   """
   def __init__(self, column):
     self.target_column = column
-    self.scaler = RobustScaler()
+    self.iqr = None
+    self.med = None
 
   def fit(self, X, y=None):
     """
@@ -496,18 +497,19 @@ class CustomRobustTransformer_wrapped(BaseEstimator, TransformerMixin):
     Parameters
     ----------
     X : pandas.DataFrame
-    The input DataFrame.
-    y : Ignored
-    Not used, present here for API consistency by convention.
+        The input DataFrame.
+        y : Ignored
+        Not used, present here for API consistency by convention.
 
     Returns
     -------
     self : CustomRobustTransformer
-    The fitted CustomRobustTransformer instance.
+        The fitted CustomRobustTransformer instance.
     """
-    self.scaler.fit(X[[self.target_column]])
+    self.iqr = X[self.target_column].quantile(0.75) - X[self.target_column].quantile(0.25)
+    self.med = X[self.target_column].median()
     return self
-  
+
   def transform(self, X):
     """
     Apply robust scaling to the target column of the input DataFrame.
@@ -515,18 +517,20 @@ class CustomRobustTransformer_wrapped(BaseEstimator, TransformerMixin):
     Parameters
     ----------
     X : pandas.DataFrame
-    The input DataFrame.
+        The input DataFrame.
 
     Returns
     -------
     pandas.DataFrame
-    A new DataFrame with the target column scaled using robust scaling.
-    """
+        A new DataFrame with the target column scaled using robust scaling.
+        """
+    if self.iqr is None or self.med is None:
+      raise NotFittedError("This CustomRobustTransformer instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.")
+
     if self.target_column not in X.columns:
       raise ValueError(f"CustomRobustTransformer.fit unrecognizable column {self.target_column}")
     
-    X[self.target_column] = self.scaler.transform(X[[self.target_column]])
-
+    X[self.target_column] = (X[self.target_column] - self.med) / self.iqr
     return X
       
 ###########################################################################################################################
