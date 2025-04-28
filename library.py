@@ -465,6 +465,71 @@ class CustomTukeyTransformer(BaseEstimator, TransformerMixin):
         return X_copy
         
 ###########################################################################################################################
+class CustomRobustTransformer_wrapped(BaseEstimator, TransformerMixin):
+  """Applies robust scaling to a specified column using sklearn's RobustScaler.
+
+  This transformer wraps the sklearn RobustScaler to apply it to a single
+  column of a pandas DataFrame. It calculates the interquartile range (IQR)
+  and median during the `fit` method and then uses these values to scale the
+  target column in the `transform` method.
+
+  Parameters
+  ----------
+  column : str
+    The name of the column to be scaled.
+
+  Attributes
+  ----------
+  target_column : str
+    The name of the column to be scaled.
+  scaler : sklearn.preprocessing.RobustScaler
+    The underlying RobustScaler instance.
+  """
+  def __init__(self, column):
+    self.target_column = column
+    self.scaler = RobustScaler()
+
+  def fit(self, X, y=None):
+    """
+    Compute the interquartile range (IQR) and median of the target column.
+
+    Parameters
+    ----------
+    X : pandas.DataFrame
+    The input DataFrame.
+    y : Ignored
+    Not used, present here for API consistency by convention.
+
+    Returns
+    -------
+    self : CustomRobustTransformer
+    The fitted CustomRobustTransformer instance.
+    """
+    self.scaler.fit(X[[self.target_column]])
+    return self
+  
+  def transform(self, X):
+    """
+    Apply robust scaling to the target column of the input DataFrame.
+
+    Parameters
+    ----------
+    X : pandas.DataFrame
+    The input DataFrame.
+
+    Returns
+    -------
+    pandas.DataFrame
+    A new DataFrame with the target column scaled using robust scaling.
+    """
+    if self.target_column not in X.columns:
+      raise ValueError(f"CustomRobustTransformer.fit unrecognizable column {self.target_column}")
+    
+    X[self.target_column] = self.scaler.transform(X[[self.target_column]])
+
+    return X
+      
+###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
     ('gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
     ('class', CustomMappingTransformer('Class', {'Crew': 0, 'C3': 1, 'C2': 2, 'C1': 3})),
