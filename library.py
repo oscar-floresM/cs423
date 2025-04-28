@@ -119,7 +119,12 @@ class CustomOHETransformer(BaseEstimator, TransformerMixin):
         dummy_na=self.dummy_na,
         drop_first=self.drop_first
     )
-
+    
+    # Convert boolean columns to float
+    bool_cols = X_encoded.select_dtypes(include=['bool']).columns
+    for col in bool_cols:
+        X_encoded[col] = X_encoded[col].astype(float)
+        
     return X_encoded
 
 ###########################################################################################################################
