@@ -423,7 +423,7 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
       greater influence than neighbors which are further away.
   """
   #your code below
-  def __init__(self, n_neighbors=5, weights='uniform'):
+ def __init__(self, n_neighbors=5, weights='uniform'):
         self.n_neighbors = n_neighbors
         self.weights = weights
         from sklearn.impute import KNNImputer
@@ -433,60 +433,51 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
             add_indicator=False
         )
 
-  def fit(self, X, y=None):
-    """Fit the imputer on X.
+    def fit(self, X, y=None):
+        """Fit the imputer on X.
 
-    Parameters
-    ----------
-    X : pandas DataFrame
-      Input data.
-    y : Ignored
-      Not used, present for API consistency.
+        Parameters
+        ----------
+        X : pandas DataFrame
+            Input data.
+        y : Ignored
+            Not used, present for API consistency.
 
-    Returns
-    -------
-    self : object
-      Fitted transformer.
-    """
-    assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
-    self.imputer.fit(X)
-    self.columns_ = X.columns
-    return self
+        Returns
+        -------
+        self : object
+            Fitted transformer.
+        """
+        assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
+        self.imputer.fit(X.select_dtypes(include=np.number))
+        self.columns_ = X.columns
+        return self
 
-  def transform(self, X):
-    """Impute missing values in X.
+    def transform(self, X):
+        """Impute missing values in X.
 
-    Parameters
-    ----------
-    X : pandas DataFrame
-      The input data to complete.
+        Parameters
+        ----------
+        X : pandas DataFrame
+            The input data to complete.
 
-    Returns
-    -------
-    pandas DataFrame
-    Copy of X with imputed values.
-    """
-    assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
-    imputed_array = self.imputer.transform(X)
-    imputed_df = pd.DataFrame(imputed_array, columns=self.columns_, index=X.index)
-    return imputed_df
+        Returns
+        -------
+        pandas DataFrame
+            Copy of X with imputed values.
+        """
+        assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
+        
+        numerical_cols = X.select_dtypes(include=np.number).columns
+        imputed_numerical = self.imputer.transform(X[numerical_cols])
+        imputed_numerical_df = pd.DataFrame(imputed_numerical, columns=numerical_cols, index=X.index)
 
-  def fit_transform(self, X, y=None):
-    """Fit to data, then transform it.
-
-    Parameters
-    ----------
-    X : pandas DataFrame
-      Input data.
-    y : Ignored
-      Not used, present for API consistency.
-
-    Returns
-    -------
-    pandas DataFrame
-    Copy of X with imputed values.
-    """
-    return self.fit(X, y).transform(X)
+        categorical_cols = X.select_dtypes(exclude=np.number).columns
+        imputed_df = pd.concat([imputed_numerical_df, X[categorical_cols]], axis=1)
+        
+        imputed_df = imputed_df[self.columns_]
+        
+        return imputed_df
 
 ###########################################################################################################################
 class CustomTargetTransformer(BaseEstimator, TransformerMixin):
