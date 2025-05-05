@@ -453,30 +453,30 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
         return self
 
      def transform(self, X):
-        """Impute missing values in X.
+         """
+         Impute missing values in X.
 
-        Parameters
-        ----------
-        X : pandas DataFrame
-            The input data to complete.
+         Parameters
+         ----------
+         X : pandas DataFrame
+             The input data to complete.
 
-        Returns
-        -------
-        pandas DataFrame
-            Copy of X with imputed values.
-        """
-        assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
+         Returns
+         -------
+         pandas DataFrame
+             Copy of X with imputed values.
+         """
+         assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)}'
         
-        numerical_cols = X.select_dtypes(include=np.number).columns
-        imputed_numerical = self.imputer.transform(X[numerical_cols])
-        imputed_numerical_df = pd.DataFrame(imputed_numerical, columns=numerical_cols, index=X.index)
+         numerical_cols = X.select_dtypes(include=np.number).columns
+         imputed_numerical = self.imputer.transform(X[numerical_cols])
+         imputed_numerical_df = pd.DataFrame(imputed_numerical, columns=numerical_cols, index=X.index)
 
-        categorical_cols = X.select_dtypes(exclude=np.number).columns
-        imputed_df = pd.concat([imputed_numerical_df, X[categorical_cols]], axis=1)
+         categorical_cols = X.select_dtypes(exclude=np.number).columns
+         imputed_df = pd.concat([imputed_numerical_df, X[categorical_cols]], axis=1)
         
-        imputed_df = imputed_df[self.columns_]
-        
-        return imputed_df
+         imputed_df = imputed_df[self.columns_]
+         return imputed_df
 
 ###########################################################################################################################
 class CustomTargetTransformer(BaseEstimator, TransformerMixin):
