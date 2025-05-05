@@ -422,16 +422,15 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
       in this case, closer neighbors of a query point will have a
       greater influence than neighbors which are further away.
   """
-  #your code below
-  def __init__(self, n_neighbors=5, weights='uniform'):
+   #your code below
+   def __init__(self, n_neighbors=5, weights='uniform'):
         self.n_neighbors = n_neighbors
         self.weights = weights
         from sklearn.impute import KNNImputer
         self.imputer = KNNImputer(
             n_neighbors=n_neighbors,
             weights=weights,
-            add_indicator=False
-        )
+            add_indicator=False)
 
     def fit(self, X, y=None):
         """Fit the imputer on X.
