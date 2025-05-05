@@ -423,7 +423,7 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
       greater influence than neighbors which are further away.
   """
   #your code below
- def __init__(self, n_neighbors=5, weights='uniform'):
+  def __init__(self, n_neighbors=5, weights='uniform'):
         self.n_neighbors = n_neighbors
         self.weights = weights
         from sklearn.impute import KNNImputer
@@ -453,7 +453,7 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
         self.columns_ = X.columns
         return self
 
-    def transform(self, X):
+     def transform(self, X):
         """Impute missing values in X.
 
         Parameters
