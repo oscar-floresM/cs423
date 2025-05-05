@@ -476,6 +476,7 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
          imputed_df = pd.concat([imputed_numerical_df, X[categorical_cols]], axis=1)
         
          imputed_df = imputed_df[self.columns_]
+         
          return imputed_df
 
 ###########################################################################################################################
