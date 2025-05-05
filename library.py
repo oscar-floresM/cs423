@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, Union, List, Set, Hashable, Literal, Tup
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
 import sklearn
 sklearn.set_config(transform_output="pandas")  #says pass pandas tables through pipeline instead of numpy matrices
 
