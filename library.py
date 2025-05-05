@@ -214,80 +214,6 @@ class CustomDropColumnsTransformer(BaseEstimator, TransformerMixin):
       return X_
 
 ###########################################################################################################################
-
-class CustomTukeyTransformer(BaseEstimator, TransformerMixin):
-    """
-    A transformer that applies Tukey's fences (inner or outer) to a specified column in a pandas DataFrame.
-
-    This transformer follows the scikit-learn transformer interface and can be used in a scikit-learn pipeline.
-    It clips values in the target column based on Tukey's inner or outer fences.
-
-    Parameters
-    ----------
-    target_column : Hashable
-        The name of the column to apply Tukey's fences on.
-    fence : Literal['inner', 'outer'], default='outer'
-        Determines whether to use the inner fence (1.5 * IQR) or the outer fence (3.0 * IQR).
-
-    Attributes
-    ----------
-    inner_low : Optional[float]
-        The lower bound for clipping using the inner fence (Q1 - 1.5 * IQR).
-    outer_low : Optional[float]
-        The lower bound for clipping using the outer fence (Q1 - 3.0 * IQR).
-    inner_high : Optional[float]
-        The upper bound for clipping using the inner fence (Q3 + 1.5 * IQR).
-    outer_high : Optional[float]
-        The upper bound for clipping using the outer fence (Q3 + 3.0 * IQR).
-
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({'values': [10, 15, 14, 20, 100, 5, 7]})
-    >>> tukey_transformer = CustomTukeyTransformer(target_column='values', fence='inner')
-    >>> transformed_df = tukey_transformer.fit_transform(df)
-    >>> transformed_df
-    """
-    def __init__(self, target_column: str, fence: Literal['inner', 'outer'] = 'outer'):
-        self.target_column = target_column
-        self.fence = fence
-        self.inner_low: Optional[float] = None
-        self.outer_low: Optional[float] = None
-        self.inner_high: Optional[float] = None
-        self.outer_high: Optional[float] = None
-
-    def fit(self, X: pd.DataFrame, y=None):
-        assert isinstance(X, pd.DataFrame), f'Expected DataFrame but got {type(X)} instead.'
-        assert self.target_column in X.columns, f'Unknown column {self.target_column}'
-        assert pd.api.types.is_numeric_dtype(X[self.target_column]), \
-            f'Expected numeric dtype in column {self.target_column}'
-
-        q1 = X[self.target_column].quantile(0.25)
-        q3 = X[self.target_column].quantile(0.75)
-        iqr = q3 - q1
-
-        self.inner_low = q1 - 1.5 * iqr
-        self.inner_high = q3 + 1.5 * iqr
-        self.outer_low = q1 - 3.0 * iqr
-        self.outer_high = q3 + 3.0 * iqr
-
-        return self
-
-    def transform(self, X: pd.DataFrame):
-        assert self.inner_low is not None, "TukeyTransformer.fit has not been called."
-
-        X_copy = X.copy()
-        if self.fence == 'inner':
-            low = self.inner_low
-            high = self.inner_high
-        else:  # 'outer'
-            low = self.outer_low
-            high = self.outer_high
-
-        X_copy[self.target_column] = X_copy[self.target_column].clip(lower=low, upper=high)
-        return X_copy
-
-###########################################################################################################################
 class CustomSigma3Transformer(BaseEstimator, TransformerMixin):
     """
     A transformer that applies 3-sigma clipping to a specified column in a pandas DataFrame.
@@ -561,6 +487,100 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
     Copy of X with imputed values.
     """
     return self.fit(X, y).transform(X)
+
+###########################################################################################################################
+class CustomTargetTransformer(BaseEstimator, TransformerMixin):
+    """
+    A target encoder that applies smoothing and returns np.nan for unseen categories.
+
+    Parameters:
+    -----------
+    col: name of column to encode.
+    smoothing : float, default=10.0
+        Smoothing factor. Higher values give more weight to the global mean.
+    """
+
+    def __init__(self, col: str, smoothing: float =10.0):
+        self.col = col
+        self.smoothing = smoothing
+        self.global_mean_ = None
+        self.encoding_dict_ = None
+
+    def fit(self, X, y):
+        """
+        Fit the target encoder using training data.
+
+        Parameters:
+        -----------
+        X : array-like of shape (n_samples, n_features)
+            Training data features.
+        y : array-like of shape (n_samples,)
+            Target values.
+        """
+        assert isinstance(X, pd.core.frame.DataFrame), f'{self.__class__.__name__}.fit expected Dataframe but got {type(X)} instead.'
+        assert self.col in X, f'{self.__class__.__name__}.fit column not in X: {self.col}. Actual columns: {X.columns}'
+        assert isinstance(y, Iterable), f'{self.__class__.__name__}.fit expected Iterable but got {type(y)} instead.'
+        assert len(X) == len(y), f'{self.__class__.__name__}.fit X and y must be same length but got {len(X)} and {len(y)} instead.'
+
+        #Create new df with just col and target - enables use of pandas methods below
+        X_ = X[[self.col]]
+        target = self.col+'_target_'
+        X_[target] = y
+
+        # Calculate global mean
+        self.global_mean_ = X_[target].mean()
+
+        # Get counts and means
+        counts = X_[self.col].value_counts().to_dict()    #dictionary of unique values in the column col and their counts
+        means = X_[target].groupby(X_[self.col]).mean().to_dict() #dictionary of unique values in the column col and their means
+
+        # Calculate smoothed means
+        smoothed_means = {}
+        for category in counts.keys():
+            n = counts[category]
+            category_mean = means[category]
+            # Apply smoothing formula: (n * cat_mean + m * global_mean) / (n + m)
+            smoothed_mean = (n * category_mean + self.smoothing * self.global_mean_) / (n + self.smoothing)
+            smoothed_means[category] = smoothed_mean
+
+        self.encoding_dict_ = smoothed_means
+
+        return self
+
+    def transform(self, X):
+        """
+        Transform the data using the fitted target encoder.
+        Unseen categories will be encoded as np.nan.
+
+        Parameters:
+        -----------
+        X : array-like of shape (n_samples, n_features)
+            Input data to transform.
+        """
+
+        assert isinstance(X, pd.core.frame.DataFrame), f'{self.__class__.__name__}.transform expected Dataframe but got {type(X)} instead.'
+        assert self.encoding_dict_, f'{self.__class__.__name__}.transform not fitted'
+
+        X_ = X.copy()
+
+        # Map categories to smoothed means, naturally producing np.nan for unseen categories, i.e.,
+        # when map tries to look up a value in the dictionary and doesn't find the key, it automatically returns np.nan. That is what we want.
+        X_[self.col] = X_[self.col].map(self.encoding_dict_)
+
+        return X_
+
+    def fit_transform(self, X, y):
+        """
+        Fit the target encoder and transform the input data.
+
+        Parameters:
+        -----------
+        X : array-like of shape (n_samples, n_features)
+            Training data features.
+        y : array-like of shape (n_samples,)
+            Target values.
+        """
+        return self.fit(X, y).transform(X)
       
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
