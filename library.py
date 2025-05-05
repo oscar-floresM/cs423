@@ -581,6 +581,78 @@ class CustomTargetTransformer(BaseEstimator, TransformerMixin):
             Target values.
         """
         return self.fit(X, y).transform(X)
+
+###########################################################################################################################
+def find_random_state(
+    features_df: pd.DataFrame,
+    labels: Iterable,
+    transformer: TransformerMixin,
+    n: int = 200
+                  ) -> Tuple[int, List[float]]:
+    """
+    Finds an optimal random state for train-test splitting based on F1-score stability.
+
+    This function iterates through `n` different random states when splitting the data,
+    applies a transformation pipeline, and trains a K-Nearest Neighbors classifier.
+    It calculates the ratio of test F1-score to train F1-score and selects the random
+    state where this ratio is closest to the mean.
+
+    Parameters
+    ----------
+    features_df : pd.DataFrame
+        The feature dataset.
+    labels : Union[pd.Series, List]
+        The corresponding labels for classification (can be a pandas Series or a Python list).
+    transformer : TransformerMixin
+        A scikit-learn compatible transformer for preprocessing.
+    n : int, default=200
+        The number of random states to evaluate.
+
+    Returns
+    -------
+    rs_value : int
+        The optimal random state where the F1-score ratio is closest to the mean.
+    Var : List[float]
+        A list containing the F1-score ratios for each evaluated random state.
+
+    Notes
+    -----
+    - If the train F1-score is below 0.1, that iteration is skipped.
+    - A higher F1-score ratio (closer to 1) indicates better train-test consistency.
+    """
+
+    model = KNeighborsClassifier(n_neighbors=5)
+    Var: List[float] = []  # Collect test_f1/train_f1 ratios
+
+    for i in range(n):
+        train_X, test_X, train_y, test_y = train_test_split(
+            features_df, labels, test_size=0.2, shuffle=True,
+            random_state=i, stratify=labels  # Works with both lists and pd.Series
+        )
+
+        # Apply transformation pipeline
+        transform_train_X = transformer.fit_transform(train_X, train_y)
+        transform_test_X = transformer.transform(test_X)
+
+        # Train model and make predictions
+        model.fit(transform_train_X, train_y)
+        train_pred = model.predict(transform_train_X)
+        test_pred = model.predict(transform_test_X)
+
+        train_f1 = f1_score(train_y, train_pred)
+
+        if train_f1 < 0.1:
+            continue  # Skip if train_f1 is too low
+
+        test_f1 = f1_score(test_y, test_pred)
+        f1_ratio = test_f1 / train_f1  # Ratio of test to train F1-score
+
+        Var.append(f1_ratio)
+
+    mean_f1_ratio: float = np.mean(Var)
+    rs_value: int = np.abs(np.array(Var) - mean_f1_ratio).argmin()  # Index of value closest to mean
+
+    return rs_value, Var
       
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
