@@ -406,11 +406,9 @@ class CustomRobustTransformer(BaseEstimator, TransformerMixin):
 class CustomKNNTransformer(BaseEstimator, TransformerMixin):
     """
     Imputes missing values using KNN.
-
     This transformer wraps the KNNImputer from scikit-learn and hard-codes
     add_indicator to be False. It also ensures that the input and output
     are pandas DataFrames.
-
     Parameters
     ----------
     n_neighbors : int, default=5
@@ -423,7 +421,6 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
         in this case, closer neighbors of a query point will have a
         greater influence than neighbors which are further away.
     """
-    #your code below
     def __init__(self, n_neighbors=5, weights='uniform'):
         self.n_neighbors = n_neighbors
         self.weights = weights
@@ -451,16 +448,14 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
         self.imputer.fit(X.select_dtypes(include=np.number))
         self.columns_ = X.columns
         return self
-
-     def transform(self, X):
+        
+    def transform(self, X):
         """
         Impute missing values in X.
-
         Parameters
         ----------
         X : pandas DataFrame
             The input data to complete.
-
         Returns
         -------
         pandas DataFrame
@@ -471,7 +466,6 @@ class CustomKNNTransformer(BaseEstimator, TransformerMixin):
         numerical_cols = X.select_dtypes(include=np.number).columns
         imputed_numerical = self.imputer.transform(X[numerical_cols])
         imputed_numerical_df = pd.DataFrame(imputed_numerical, columns=numerical_cols, index=X.index)
-
         categorical_cols = X.select_dtypes(exclude=np.number).columns
         imputed_df = pd.concat([imputed_numerical_df, X[categorical_cols]], axis=1)
         
