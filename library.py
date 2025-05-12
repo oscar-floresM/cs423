@@ -643,23 +643,40 @@ def find_random_state(
       
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
-    ('gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
-    ('class', CustomMappingTransformer('Class', {'Crew': 0, 'C3': 1, 'C2': 2, 'C1': 3})),
-    ('joined', CustomOHETransformer(target_column='Joined')),
-    ('fare', CustomTukeyTransformer(target_column='Fare', fence='outer')),
-    ('normalize', CustomMappingTransformer('Age', {}, normalize_numeric=True)),
-], verbose=True)
+    ('map_gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
+    ('map_class', CustomMappingTransformer('Class', {'Crew': 0, 'C3': 1, 'C2': 2, 'C1': 3})),
+    ('target_joined', CustomTargetTransformer(col='Joined', smoothing=10)),
+    ('tukey_age', CustomTukeyTransformer(target_column='Age', fence='outer')),
+    ('tukey_fare', CustomTukeyTransformer(target_column='Fare', fence='outer')),
+    ('scale_age', CustomRobustTransformer('Age')),
+    ('scale_fare', CustomRobustTransformer('Fare')),
+    ('impute', CustomKNNTransformer(n_neighbors=5)),
+    ], verbose=True)
 
 #now invoke it
 #transformed_df = titanic_transformer.fit_transform(titanic_features)
 
 ###########################################################################################################################
 customer_transformer = Pipeline(steps=[
-    #add drop step below
-    ('drop', CustomDropColumnsTransformer(['ID'], 'drop')),
-    ('time spent', CustomTukeyTransformer('Time Spent', 'inner')),
+    ('map_os', CustomMappingTransformer('OS', {'Android': 0, 'iOS': 1})),
+    ('target_isp', CustomTargetTransformer(col='ISP')),
+    ('map_level', CustomMappingTransformer('Experience Level', {'low': 0, 'medium': 1, 'high':2})),
+    ('map_gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
+    ('tukey_age', CustomTukeyTransformer('Age', 'inner')),  #from chapter 4
+    ('tukey_time spent', CustomTukeyTransformer('Time Spent', 'inner')),  #from chapter 4
+    ('scale_age', CustomRobustTransformer('Age')), #from 5
+    ('scale_time spent', CustomRobustTransformer('Time Spent')), #from 5
+    ('impute', CustomKNNTransformer(n_neighbors=5)),
     ], verbose=True)
 
 #now invoke it
 #transformed_df = customer_transformer.fit_transform(customer_features)
 
+###########################################################################################################################
+titanic_variance_based_split = 107   #add to your library
+customer_variance_based_split = 113  #add to your library
+
+###########################################################################################################################
+fitted_pipeline = titanic_transformer.fit(X_train, y_train)  #notice just fit method called
+import joblib
+joblib.dump(fitted_pipeline, 'fitted_pipeline.pkl')  #and next move to GitHub
