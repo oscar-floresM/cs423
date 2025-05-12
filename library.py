@@ -677,6 +677,6 @@ titanic_variance_based_split = 107   #add to your library
 customer_variance_based_split = 113  #add to your library
 
 ###########################################################################################################################
-fitted_pipeline = titanic_transformer.fit(X_train, y_train)  #notice just fit method called
-import joblib
-joblib.dump(fitted_pipeline, 'fitted_pipeline.pkl')  #and next move to GitHub
+# fitted_pipeline = titanic_transformer.fit(X_train, y_train)  #notice just fit method called
+# import joblib
+# joblib.dump(fitted_pipeline, 'fitted_pipeline.pkl')  #and next move to GitHub
