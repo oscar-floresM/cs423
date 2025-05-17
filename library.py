@@ -640,7 +640,15 @@ def find_random_state(
     rs_value: int = np.abs(np.array(Var) - mean_f1_ratio).argmin()  # Index of value closest to mean
 
     return rs_value, Var
-      
+
+###########################################################################################################################
+def titanic_setup(titanic_table, transformer=titanic_transformer, rs=titanic_variance_based_split, ts=.2):
+  return dataset_setup(titanic_table, 'Survived',  transformer, rs, ts)
+
+###########################################################################################################################
+def customer_setup(customer_table, transformer=customer_transformer, rs=customer_variance_based_split, ts=.2):
+  return dataset_setup(customer_table, 'Rating', transformer, rs, ts)
+    
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
     ('map_gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
