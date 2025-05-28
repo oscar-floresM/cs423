@@ -692,14 +692,6 @@ def threshold_results(thresh_list, actuals, predicted):
   return (result_df, fancy_df)
 
 ###########################################################################################################################
-def titanic_setup(titanic_table, transformer=titanic_transformer, rs=titanic_variance_based_split, ts=.2):
-  return dataset_setup(titanic_table, 'Survived',  transformer, rs, ts)
-
-###########################################################################################################################
-def customer_setup(customer_table, transformer=customer_transformer, rs=customer_variance_based_split, ts=.2):
-  return dataset_setup(customer_table, 'Rating', transformer, rs, ts)
-
-###########################################################################################################################
 def halving_search(model, grid, x_train, y_train, factor=2, min_resources="exhaust", scoring='roc_auc'):
   #your code below
   halving_cv = HalvingGridSearchCV(
@@ -763,5 +755,13 @@ customer_transformer = Pipeline(steps=[
 ###########################################################################################################################
 titanic_variance_based_split = 107   #add to your library
 customer_variance_based_split = 113  #add to your library
+
+###########################################################################################################################
+def titanic_setup(titanic_table, transformer=titanic_transformer, rs=titanic_variance_based_split, ts=.2):
+  return dataset_setup(titanic_table, 'Survived',  transformer, rs, ts)
+
+###########################################################################################################################
+def customer_setup(customer_table, transformer=customer_transformer, rs=customer_variance_based_split, ts=.2):
+  return dataset_setup(customer_table, 'Rating', transformer, rs, ts)
 
 ###########################################################################################################################
