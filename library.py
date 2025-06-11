@@ -724,6 +724,18 @@ def sort_grid(grid):
   return sorted_grid
 
 ###########################################################################################################################
+heart_transformer = Pipeline(steps=[
+    ('map_gender', CustomMappingTransformer('gender', {1: 0, 2: 1})),  # 1=male->0, 2=female->1
+    ('tukey_age', CustomTukeyTransformer(target_column='age', fence='outer')),
+    ('tukey_height', CustomTukeyTransformer(target_column='height', fence='outer')),
+    ('tukey_weight', CustomTukeyTransformer(target_column='weight', fence='outer')),
+    ('scale_age', CustomRobustTransformer(column='age')),
+    ('scale_height', CustomRobustTransformer(column='height')),
+    ('scale_weight', CustomRobustTransformer(column='weight')),
+    ('impute', CustomKNNTransformer(n_neighbors=5)),
+    ], verbose=True)
+
+###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
     ('map_gender', CustomMappingTransformer('Gender', {'Male': 0, 'Female': 1})),
     ('map_class', CustomMappingTransformer('Class', {'Crew': 0, 'C3': 1, 'C2': 2, 'C1': 3})),
