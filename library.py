@@ -735,7 +735,6 @@ student_transformer = Pipeline(steps=[
         "master's degree": 5
     })),
     ('map_lunch', CustomMappingTransformer('lunch', {'standard': 0, 'free/reduced': 1})),  # Mapping lunch type
-    ('map_test_prep', CustomMappingTransformer('test preparation course', {'none': 0, 'completed': 1})),  # Mapping test preparation
     ('target_race', CustomTargetTransformer(col='race/ethnicity', smoothing=10)),  # Target encoding for race/ethnicity
     ('tukey_math', CustomTukeyTransformer(target_column='math score', fence='outer')),  # Outlier handling for math score
     ('tukey_reading', CustomTukeyTransformer(target_column='reading score', fence='outer')),  # Outlier handling for reading score

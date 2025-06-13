@@ -20,13 +20,7 @@
 - **Design Choice:** Binary encoding of lunch type
 - **Rationale:** Free/reduced lunch may correlate with socioeconomic status; encoding allows the model to capture this factor
 
-## 4. Test Preparation Course Mapping (`map_test_prep`)
-
-- **Transformer:** CustomMappingTransformer('test preparation course', {'none': 0, 'completed': 1})
-- **Design Choice:** Binary encoding of whether test preparation course was completed
-- **Rationale:** Converts the target feature into numeric binary format for easier processing in supervised learning
-
-## 5. Target Encoding for Race/Ethnicity (`target_race`)
+## 4. Target Encoding for Race/Ethnicity (`target_race`)
 
 - **Transformer:** CustomTargetTransformer(col='race/ethnicity', smoothing=10)
 - **Design Choice:** Target encoding with smoothing factor of 10
@@ -34,31 +28,31 @@
   - Converts nominal categorical variable into numeric representation based on its relationship with the target
   - Smoothing prevents overfitting by balancing category means with global mean
 
-## 6. Outlier Treatment for Math Score (`tukey_math`)
+## 5. Outlier Treatment for Math Score (`tukey_math`)
 
 - **Transformer:** CustomTukeyTransformer(target_column='math score', fence='outer')
 - **Design Choice:** Tukey method using outer fences to detect extreme outliers
 - **Rationale:** Protects model from extreme math score outliers that could distort model performance
 
-## 7. Outlier Treatment for Reading Score (`tukey_reading`)
+## 6. Outlier Treatment for Reading Score (`tukey_reading`)
 
 - **Transformer:** CustomTukeyTransformer(target_column='reading score', fence='outer')
 - **Design Choice:** Tukey method using outer fences for outlier detection
 - **Rationale:** Same rationale as math score; removes extreme values that could bias learning
 
-## 8. Scaling for Math Score (`scale_math`)
+## 7. Scaling for Math Score (`scale_math`)
 
 - **Transformer:** CustomRobustTransformer(column='math score')
 - **Design Choice:** Robust scaling using median and interquartile range
 - **Rationale:** Minimizes impact of outliers while normalizing scale for math scores
 
-## 9. Scaling for Reading Score (`scale_reading`)
+## 8. Scaling for Reading Score (`scale_reading`)
 
 - **Transformer:** CustomRobustTransformer(column='reading score')
 - **Design Choice:** Robust scaling using median and interquartile range
 - **Rationale:** Same as math score scaling, ensuring both numeric features are robustly scaled
 
-## 10. Imputation (`impute`)
+## 9. Imputation (`impute`)
 
 - **Transformer:** CustomKNNTransformer(n_neighbors=5)
 - **Design Choice:** KNN imputation using 5 nearest neighbors
