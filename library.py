@@ -724,16 +724,25 @@ def sort_grid(grid):
   return sorted_grid
 
 ###########################################################################################################################
-heart_transformer = Pipeline(steps=[
-    ('map_gender', CustomMappingTransformer('gender', {1: 0, 2: 1})),  # 1=male->0, 2=female->1
-    ('tukey_age', CustomTukeyTransformer(target_column='age', fence='outer')),
-    ('tukey_height', CustomTukeyTransformer(target_column='height', fence='outer')),
-    ('tukey_weight', CustomTukeyTransformer(target_column='weight', fence='outer')),
-    ('scale_age', CustomRobustTransformer(column='age')),
-    ('scale_height', CustomRobustTransformer(column='height')),
-    ('scale_weight', CustomRobustTransformer(column='weight')),
-    ('impute', CustomKNNTransformer(n_neighbors=5)),
-    ], verbose=True)
+student_transformer = Pipeline(steps=[
+    ('map_gender', CustomMappingTransformer('gender', {'male': 0, 'female': 1})),  # Mapping binary gender
+    ('map_parent_edu', CustomMappingTransformer('parental level of education', {  # Mapping parental education
+        "some high school": 0,
+        "high school": 1,
+        "some college": 2,
+        "associate's degree": 3,
+        "bachelor's degree": 4,
+        "master's degree": 5
+    })),
+    ('map_lunch', CustomMappingTransformer('lunch', {'standard': 0, 'free/reduced': 1})),  # Mapping lunch type
+    ('map_test_prep', CustomMappingTransformer('test preparation course', {'none': 0, 'completed': 1})),  # Mapping test preparation
+    ('target_race', CustomTargetTransformer(col='race/ethnicity', smoothing=10)),  # Target encoding for race/ethnicity
+    ('tukey_math', CustomTukeyTransformer(target_column='math score', fence='outer')),  # Outlier handling for math score
+    ('tukey_reading', CustomTukeyTransformer(target_column='reading score', fence='outer')),  # Outlier handling for reading score
+    ('scale_math', CustomRobustTransformer(column='math score')),  # Robust scaling for math score
+    ('scale_reading', CustomRobustTransformer(column='reading score')),  # Robust scaling for reading score
+    ('impute', CustomKNNTransformer(n_neighbors=5)),  # Imputation of missing values using KNN
+], verbose=True)
 
 ###########################################################################################################################
 titanic_transformer = Pipeline(steps=[
